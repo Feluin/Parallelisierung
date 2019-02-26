@@ -14,8 +14,7 @@ public class Application {
     private FileWriter fileWriter;
     // Ein Ryzen 1700x schafft in 15 min die Berechnugen von 0-82000;
     private int min=0;
-    private int max=82000;
-
+    private int max=120;
     private String filepath = "data/out.txt";
 
     public static void main(String[] args) {
@@ -26,6 +25,7 @@ public class Application {
 
     public void start() {
         long startpoint=System.currentTimeMillis();
+        Timer stop= new Timer();
         try {
             File file = new File(filepath);
             file.createNewFile();
@@ -35,28 +35,27 @@ public class Application {
         }
         int cores = Runtime.getRuntime().availableProcessors();
         CyclicBarrier barrier = new CyclicBarrier(cores,() -> {
-
             try {
-
+                stop.cancel();
                 fileWriter.flush();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             System.out.println("It took around "+((System.currentTimeMillis()-startpoint)/1000.0));
         });
-        ArrayList<BigInteger> list = new ArrayList<>();
+        ArrayList<Integer> list = new ArrayList<>();
         int count = 0;
-        int number = min;
+        Integer number = min;
         while (number < max) {
-            BigInteger prime = new BigInteger("" + number);
+            BigInteger prime = new BigInteger(String.valueOf(number));
             if (BigMath.returnPrime(prime)) {
-                list.add(prime);
+                list.add(number);
                 count++;
             }
             number++;
         }
         System.out.println("There are "+count+"Primes to go");
-        Timer stop= new Timer();
+
         for (int i = 0; i < cores; i++) {
             Worker worker = new Worker(barrier, i, cores, list, fileWriter);
             worker.start();
