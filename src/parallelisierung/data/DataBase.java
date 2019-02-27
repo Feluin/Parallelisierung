@@ -55,7 +55,7 @@ public class DataBase
 
     public void calcNextPrimes(final BigInteger stepWidth)
     {
-        BigInteger max =currentStepForPrime.add(stepWidth.multiply(BigInteger.TWO));
+        BigInteger max =currentStepForPrime.add(stepWidth.add(BigInteger.TEN));
         Set<BigInteger> primes = new HashSet<>();
         while (currentStepForPrime.compareTo(max) < 0)
         {

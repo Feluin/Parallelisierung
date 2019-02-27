@@ -18,7 +18,6 @@ public class Application {
 
     private BigInteger startVal = BigInteger.TWO;
     private BigInteger stepWidth = new BigInteger("1000");
-
     private String filepath = "./data/out.txt";
     private List<Worker> allworkers = new ArrayList<>();
 
@@ -31,7 +30,6 @@ public class Application {
     }
 
     public void start() {
-        long startpoint = System.currentTimeMillis();
         Timer stop = new Timer();
         try {
             File file = new File(filepath);
@@ -43,8 +41,8 @@ public class Application {
         }
 
         int cores = Runtime.getRuntime().availableProcessors();
+
         CyclicBarrier barrier = new CyclicBarrier(cores, () -> {
-            System.out.println("It took around "+((System.currentTimeMillis()-startpoint)/1000.0));
             reciever.flush();
             dataBase.calcNextPrimes(stepWidth);
             allworkers.forEach(Worker::nextStep);
@@ -54,18 +52,18 @@ public class Application {
             Worker worker = new Worker(barrier, dataBase, cores, reciever, startVal, i, stepWidth);
             allworkers.add(worker);
         }
-
+        stop.schedule(new TimerTask() {
+            @Override
+            public void run() {
+               allworkers.forEach(Worker::stopthread);
+               barrier.reset();
+            }
+        },8500);
         dataBase.calcNextPrimes(stepWidth);
         for (int i = 0; i < allworkers.size(); i++) {
             final Worker worker = allworkers.get(i);
             worker.nextStep();
             worker.start();
-            stop.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    worker.stopthread();
-                }
-            },900000);
         }
     }
 }

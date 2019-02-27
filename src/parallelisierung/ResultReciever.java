@@ -36,7 +36,6 @@ public class ResultReciever {
     public List<ResultEntry> getEntrylist() {
         return entrylist;
     }
-
     public void flush() {
         try {
             writer.flush();

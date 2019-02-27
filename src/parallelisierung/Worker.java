@@ -42,12 +42,12 @@ public class Worker extends Thread {
                 if (startVal.compareTo(stepstop) > 0) {
                     try {
                         barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException e) {
-                        e.printStackTrace();
+                    } catch (InterruptedException | BrokenBarrierException ignored) {
                         break;
                     }
-                }
             }
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
