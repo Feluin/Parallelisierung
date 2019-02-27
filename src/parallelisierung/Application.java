@@ -11,10 +11,11 @@ import java.util.TimerTask;
 import java.util.concurrent.*;
 
 public class Application {
-    private FileWriter fileWriter;
+
+    private ResultReciever reciever;
     // Ein Ryzen 1700x schafft in 15 min die Berechnugen von 0-82000;
     private int min=0;
-    private int max=120;
+    private int max=5200;
     private String filepath = "data/out.txt";
 
     public static void main(String[] args) {
@@ -29,18 +30,15 @@ public class Application {
         try {
             File file = new File(filepath);
             file.createNewFile();
-            fileWriter = new FileWriter(file);
+            FileWriter fileWriter = new FileWriter(file);
+           reciever=new ResultReciever(fileWriter);
         } catch (IOException e) {
             e.printStackTrace();
         }
         int cores = Runtime.getRuntime().availableProcessors();
         CyclicBarrier barrier = new CyclicBarrier(cores,() -> {
-            try {
-                stop.cancel();
-                fileWriter.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            stop.cancel();
+            reciever.flush();
             System.out.println("It took around "+((System.currentTimeMillis()-startpoint)/1000.0));
         });
         ArrayList<Integer> list = new ArrayList<>();
@@ -57,7 +55,7 @@ public class Application {
         System.out.println("There are "+count+"Primes to go");
 
         for (int i = 0; i < cores; i++) {
-            Worker worker = new Worker(barrier, i, cores, list, fileWriter);
+            Worker worker = new Worker(barrier, i, cores, list, reciever);
             worker.start();
 
             stop.schedule(new TimerTask() {
