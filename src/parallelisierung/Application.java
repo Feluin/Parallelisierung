@@ -1,6 +1,7 @@
 package parallelisierung;
 
 import parallelisierung.data.DataBase;
+import parallelisierung.resultout.ResultReciever;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -55,10 +56,10 @@ public class Application {
         stop.schedule(new TimerTask() {
             @Override
             public void run() {
-               allworkers.forEach(Worker::stopthread);
+               allworkers.forEach(Worker::stopThread);
                barrier.reset();
             }
-        },8500);
+        },90000);
         dataBase.calcNextPrimes(stepWidth);
         for (int i = 0; i < allworkers.size(); i++) {
             final Worker worker = allworkers.get(i);

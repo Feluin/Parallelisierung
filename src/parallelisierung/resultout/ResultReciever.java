@@ -1,4 +1,4 @@
-package parallelisierung;
+package parallelisierung.resultout;
 
 import java.io.FileWriter;
 import java.io.IOException;
