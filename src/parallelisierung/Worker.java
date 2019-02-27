@@ -8,10 +8,9 @@ import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
-public class Worker extends Thread
-{
+public class Worker extends Thread {
     private final ResultReciever reciever;
-    private  BigInteger startVal;
+    private BigInteger startVal;
     private CyclicBarrier barrier;
     private DataBase dataBase;
     private volatile boolean timestop = false;
@@ -20,17 +19,10 @@ public class Worker extends Thread
     private BigInteger stepWidth;
     private BigInteger stepstop;
 
-    public Worker(
-        final CyclicBarrier barrier,
-        DataBase dataBase,
-        int cores,
-        ResultReciever reciever,
-        final BigInteger startVal,
-        final int offset,BigInteger stepWidth)
-    {
+    public Worker(final CyclicBarrier barrier, DataBase dataBase, int cores, ResultReciever reciever, final BigInteger startVal, final int offset, BigInteger stepWidth) {
         this.barrier = barrier;
         this.dataBase = dataBase;
-        
+
         this.cores = cores;
         this.reciever = reciever;
         this.startVal = startVal;
@@ -38,64 +30,50 @@ public class Worker extends Thread
         this.stepWidth = stepWidth;
     }
 
-    public void run()
-    {
-        try
-        {
+    public void run() {
+        try {
             startVal = startVal.add(BigInteger.valueOf(offset));
-
-            while (!timestop)
-            {
+            while (!timestop) {
                 BigInteger square = startVal.multiply(startVal);
                 BigInteger result = square.subtract(BigInteger.ONE);
                 List<BigInteger> factors = primeFactorSplitting(result);
-                reciever.recieve(new ResultEntry(factors,square,result));
+                reciever.recieve(new ResultEntry(factors,square,startVal));
                 startVal = startVal.add(BigInteger.valueOf(cores));
-                if (startVal.compareTo(stepstop) > 0)
-                {
-                    try
-                    {
+                if (startVal.compareTo(stepstop) > 0) {
+                    try {
                         barrier.await();
-                    } catch (InterruptedException | BrokenBarrierException e)
-                    {
+                    } catch (InterruptedException | BrokenBarrierException e) {
                         e.printStackTrace();
                         break;
                     }
                 }
             }
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
     }
 
-    public void nextStep()
-    {
-        stepstop=startVal.add(stepWidth);
+    public void nextStep() {
+        stepstop = startVal.add(stepWidth);
     }
 
-    private List<BigInteger> primeFactorSplitting(final BigInteger result) throws Exception
-    {
+    private List<BigInteger> primeFactorSplitting(final BigInteger result) throws Exception {
         BigInteger current = new BigInteger(String.valueOf(result));
         List<BigInteger> factorlist = new ArrayList<>();
         BigInteger product = BigInteger.ONE;
-        while (!dataBase.isPrime(current))
-        {
-            if (dataBase.contains(current))
-            {
+        while (!dataBase.isPrime(current)) {
+            if (dataBase.contains(current)) {
                 factorlist.addAll(dataBase.get(current));
                 dataBase.addEntry(result, factorlist);
                 return factorlist;
             }
             List<BigInteger> primes = dataBase.getPrimesasList();
             int iterator = 0;
-            while (iterator < primes.size())
-            {
+            while (iterator < primes.size()) {
 
                 BigInteger prime = primes.get(iterator);
-                if (current.remainder(prime).equals(BigInteger.ZERO))
-                {
+                if (current.remainder(prime).equals(BigInteger.ZERO)) {
                     factorlist.add(prime);
                     product = product.multiply(prime);
                     current = current.divide(prime);
@@ -104,8 +82,7 @@ public class Worker extends Thread
                 }
                 iterator++;
             }
-            if (iterator == primes.size())
-            {
+            if (iterator == primes.size()) {
                 throw new Exception();
             }
         }
@@ -114,17 +91,7 @@ public class Worker extends Thread
         return factorlist;
     }
 
-    public void load(BigInteger startVal,
-        int offset)
-    {
-
-        this.startVal = startVal;
-        this.offset = offset;
-    }
-
-
-    public void stopthread()
-    {
+    public void stopthread() {
         this.timestop = true;
     }
 }
