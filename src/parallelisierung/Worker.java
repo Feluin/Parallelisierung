@@ -1,68 +1,130 @@
 package parallelisierung;
 
-import java.io.FileWriter;
-import java.io.IOException;
+import parallelisierung.data.DataBase;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 
-public class Worker extends Thread {
+public class Worker extends Thread
+{
     private final ResultReciever reciever;
+    private  BigInteger startVal;
     private CyclicBarrier barrier;
+    private DataBase dataBase;
     private volatile boolean timestop = false;
-    private int number;
     private int cores;
-    private int position;
-    private ArrayList<Integer> list;
+    private int offset;
+    private BigInteger stepWidth;
+    private BigInteger stepstop;
 
-
-    public Worker(CyclicBarrier barrier, int number, int cores, ArrayList<Integer> list, ResultReciever reciever) {
+    public Worker(
+        final CyclicBarrier barrier,
+        DataBase dataBase,
+        int cores,
+        ResultReciever reciever,
+        final BigInteger startVal,
+        final int offset,BigInteger stepWidth)
+    {
         this.barrier = barrier;
-        this.number = number;
-        this.position = number;
+        this.dataBase = dataBase;
+        
         this.cores = cores;
-        this.list = list;
-        this.reciever =reciever;
+        this.reciever = reciever;
+        this.startVal = startVal;
+        this.offset = offset;
+        this.stepWidth = stepWidth;
     }
 
-    public void run() {
-        try {
-            System.out.println(number + " starts");
-            while (position < list.size()) {
-                if (!timestop) {
-                    doRecursion(List.of(list.get(position)));
-                }
-                position += cores;
-            }
-            System.out.println(number + " has finished;");
-            barrier.await();
+    public void run()
+    {
+        try
+        {
+            startVal = startVal.add(BigInteger.valueOf(offset));
 
-        } catch (InterruptedException | BrokenBarrierException ex) {
-            System.out.println(ex);
-        }
-    }
-
-    private void doRecursion(List<Integer> integers) {
-        Integer prod = 1;
-        for (Integer integer : integers) {
-            prod = prod * integer;
-        }
-        for (Integer i = 0; i < list.get(list.size() - 1); i++)
-            if (!timestop) if (BigMath.returnPrime(new BigInteger(String.valueOf(i)))) {
-                Integer value = prod * i + 1;
-                Integer sqrt = (int) Math.sqrt(value);
-                if (value.equals(sqrt * sqrt)) {
-                    List<Integer> list =new ArrayList<>(integers);
-                    list.add(value);
-                    reciever.recieve(new ResultEntry(integers, i, value, sqrt));
-                    doRecursion(list);
+            while (!timestop)
+            {
+                BigInteger square = startVal.multiply(startVal);
+                BigInteger result = square.subtract(BigInteger.ONE);
+                List<BigInteger> factors = primeFactorSplitting(result);
+                reciever.recieve(new ResultEntry(factors,square,result));
+                startVal = startVal.add(BigInteger.valueOf(cores));
+                if (startVal.compareTo(stepstop) > 0)
+                {
+                    try
+                    {
+                        barrier.await();
+                    } catch (InterruptedException | BrokenBarrierException e)
+                    {
+                        e.printStackTrace();
+                        break;
+                    }
                 }
             }
+        } catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
     }
 
-    public void stopthread() {
+    public void nextStep()
+    {
+        stepstop=startVal.add(stepWidth);
+    }
+
+    private List<BigInteger> primeFactorSplitting(final BigInteger result) throws Exception
+    {
+        BigInteger current = new BigInteger(String.valueOf(result));
+        List<BigInteger> factorlist = new ArrayList<>();
+        BigInteger product = BigInteger.ONE;
+        while (!dataBase.isPrime(current))
+        {
+            if (dataBase.contains(current))
+            {
+                factorlist.addAll(dataBase.get(current));
+                dataBase.addEntry(result, factorlist);
+                return factorlist;
+            }
+            List<BigInteger> primes = dataBase.getPrimesasList();
+            int iterator = 0;
+            while (iterator < primes.size())
+            {
+
+                BigInteger prime = primes.get(iterator);
+                if (current.remainder(prime).equals(BigInteger.ZERO))
+                {
+                    factorlist.add(prime);
+                    product = product.multiply(prime);
+                    current = current.divide(prime);
+                    dataBase.addEntry(product, factorlist);
+                    break;
+                }
+                iterator++;
+            }
+            if (iterator == primes.size())
+            {
+                throw new Exception();
+            }
+        }
+        factorlist.add(current);
+        dataBase.addEntry(result, factorlist);
+        return factorlist;
+    }
+
+    public void load(BigInteger startVal,
+        int offset)
+    {
+
+        this.startVal = startVal;
+        this.offset = offset;
+    }
+
+
+    public void stopthread()
+    {
         this.timestop = true;
     }
 }

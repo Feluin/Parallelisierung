@@ -1,25 +1,26 @@
 package parallelisierung;
 
+import java.math.BigInteger;
 import java.util.List;
 
 public class ResultEntry {
-    private List<Integer> factors;
-    private Integer value;
-    private Integer sqrt;
-    private Integer last;
+    private List<BigInteger> factors;
+    private BigInteger square;
+    private BigInteger root;
 
 
-    public ResultEntry(List<Integer> factors, Integer last, Integer value, Integer sqrt) {
+
+    public ResultEntry(List<BigInteger> factors, BigInteger square, BigInteger root) {
         this.factors = factors;
-        this.value = value;
-        this.sqrt = sqrt;
-        this.last = last;
+        this.square = square;
+        this.root = root;
+
     }
 
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         factors.forEach(integer -> builder.append(integer).append("*"));
-        return builder.toString() + last + "+1=" + value + " " + sqrt + "^2\n";
+        return builder.toString().substring(0,builder.toString().length()-1)+ "+1=" + square + " " + root + "^2\n";
     }
 }
